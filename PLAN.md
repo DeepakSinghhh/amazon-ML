@@ -147,6 +147,12 @@ Candidate sets are ranked separately in the final judging, so this phase gets re
 4. Fine-tuned bi-encoder, then the cross-encoder.
 5. LLM verifier and pseudo-labeling. These are the last few tenths of a point.
 
-## 5. Compute
-- The current dev container has 4 CPUs, 15 GB RAM, and **no GPU**. It is fine for EDA, normalization, blocking, and the GBDT.
-- Fine-tuning the bi-encoder and cross-encoder needs a GPU: Kaggle (2×T4, free) or Colab. The 7B LLM needs an A100 or L4, or QLoRA on a single T4 at 24 GB or more if that is available.
+## 5. Compute and workflow (team: **Nexabuild**, about 15–20 days)
+- **Dev container, no GPU:** EDA, normalization, blocking, features, GBDT, and the decision step. Hugging Face is not reachable from this container, so all transformer work happens on Colab.
+- **Google Colab, free T4 16 GB:** runs the notebooks in `notebooks/`, which clone this repo and read the data from Google Drive.
+  - Fine-tunes the bi-encoder (multilingual-e5-base or bge-m3) and the cross-encoder (mDeBERTa-v3-base). Each takes about 1–3 hours on a T4.
+  - Writes model weights to Drive and pair-score / embedding files back to the repo (small parquet files).
+  - Checkpoint every epoch to Drive, because free sessions disconnect.
+  - Kaggle (30 GPU-hours a week) is the backup.
+- **LLM verifier:** a 7B model is too slow on a free T4. Use Qwen2.5-1.5B or 3B (Apache-2.0) with LoRA, or drop it if the cross-encoder is already enough.
+- **Submission schedule:** baseline by day 3–4, then about one validated improvement per submission. Always compare the local out-of-fold F0.5 with the leaderboard to make sure they move together.
